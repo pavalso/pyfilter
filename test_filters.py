@@ -157,6 +157,14 @@ class TestFilters(unittest.TestCase):
         self.assertFalse(filters.contains('//test/dir2', root))
         self.assertFalse(filters.contains('//test/dir2/', root))
 
+        root = '//test/dir'
+
+        self.assertTrue(filters.contains('//test/dir/', root))
+        self.assertTrue(filters.contains('//test/dir', root))
+
+        self.assertFalse(filters.contains('//test/', root))
+        self.assertFalse(filters.contains('//test', root))
+
         root = '//test/D:/dir/'
 
         self.assertTrue(filters.contains('//test/D:/dir/', root))
