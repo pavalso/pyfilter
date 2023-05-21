@@ -6,10 +6,23 @@ import os
 app = flask.Flask(__name__)
 
 app.url_map.converters['path'].to_python = lambda _, value: pyfilter.Paths.relative(value)
+app.url_map.strict_slashes = False
+
+@app.get('/<path:path>')
+def get_file(path):
+    print('FILE', path)
+    if not os.path.isfile(path):
+        flask.abort(404)
+
+    try:
+        return flask.send_file(path)
+    except PermissionError:
+        flask.abort(403)
 
 @app.get('/', defaults = {'path': '.'})
 @app.get('/<path:path>/')
 def get_dir(path):
+    print('DIR', path)
     if not os.path.isdir(path):
         flask.abort(404)
 
@@ -29,15 +42,10 @@ def get_dir(path):
         dirs = walk[1],
         files = walk[2])
 
-@app.get('/<path:path>')
-def get_file(path):
-    if not os.path.isfile(path):
-        flask.abort(404)
+def main(**kwargs):
+    host = kwargs.get('host', 'localhost')
+    port = kwargs.get('port', 80)
 
-    try:
-        return flask.send_file(path)
-    except PermissionError:
-        flask.abort(403)
-
-if __name__ == '__main__':
-    app.run(host = 'localhost', port = 80)
+    app.run(
+        host = host, 
+        port = port)
