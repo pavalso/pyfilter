@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Directory listing</title>
+</head>
+<body>
+    <h1>Directory listing for {{ request.path }}</h1>
+    <hr style="width:100%">
+    <ul>
+        {% for name in dirs %}
+            <li><a href="{{ request.base_url }}{{ name }}/"><div>{{ name }}/</div></a></li>
+        {% endfor %}
+        {% for name in files %}
+            <li><a href="{{ request.base_url }}{{ name }}"><div>{{ name }}</div></a></li>
+        {% endfor %}
+    </ul>
+    <hr style="width:100%">
+    <p>Powered by <a href="https://github.com/pavalso">pyfilters</a></p>
+</body>
+</html>
