@@ -1,9 +1,10 @@
 import unittest
-import filters
 import os
 
+from pyfilter import filters
 
-class TestFilters(unittest.TestCase):
+
+class TestContains(unittest.TestCase):
 
     def test_filter(self):
 
@@ -142,6 +143,10 @@ class TestFilters(unittest.TestCase):
         self.assertTrue(filters.Paths.contains(os.path.join('/test/dir/', ''), root))
         self.assertTrue(filters.Paths.contains(os.path.join('/test/dir/', 'dir2'), root))
         self.assertTrue(filters.Paths.contains(os.path.join('/test/dir/', 'dir2/'), root))
+
+        self.assertTrue(filters.Paths.contains(os.path.join('d://test/dir/', ''), root))
+        self.assertTrue(filters.Paths.contains(os.path.join('d://test/dir/', 'dir2'), root))
+        self.assertTrue(filters.Paths.contains(os.path.join('d://test/dir/', 'dir2/'), root))
 
     def test_drives(self):
         
