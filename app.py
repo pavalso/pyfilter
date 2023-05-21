@@ -16,12 +16,13 @@ def get_dir(path):
     index_path = os.path.join(os.path.abspath(path), 'index.html')
 
     if os.path.isfile(index_path):
-        return get_file(index_path)
+        flask.abort(get_file(index_path))
+
+    walk = next(os.walk(path, onerror=lambda _: flask.abort(403)))
 
     relative = os.path.relpath(path)
     relative = '' if relative == '.' else '%s%c' % (relative.replace(os.path.sep, os.path.altsep), os.path.altsep)
 
-    walk = next(os.walk(path, onerror=lambda _: flask.abort(403)))
     return flask.render_template(
         'index.html',
         path = relative,

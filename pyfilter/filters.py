@@ -18,6 +18,3 @@ class Paths:
             return broot
         brelative = os.path.relpath(path or os.path.sep, broot)
         return os.path.abspath(os.path.join(broot, brelative))
-
-if __name__ == '__main__':
-    print(Paths.relative('D://test/dir/dir2', 'D://test/dir/'))
