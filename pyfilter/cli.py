@@ -1,39 +1,36 @@
 import pyfilter
 import flask
 import os
+import argparse
+import werkzeug.exceptions
 
 
 app = flask.Flask(__name__)
+root = os.getcwd()
 
-app.url_map.converters['path'].to_python = lambda _, value: pyfilter.Paths.relative(value)
-app.url_map.strict_slashes = False
+render = True
+block_by_default = True
 
-@app.get('/<path:path>')
-def get_file(path):
-    print('FILE', path)
-    if not os.path.isfile(path):
-        flask.abort(404)
+@app.get('/', defaults={'path': '%c%c' % (os.path.curdir, os.path.altsep)})
+@app.route('/<path:path>', strict_slashes=False)
+def on_request(path: str):
+    _, request_path = os.path.splitdrive(pyfilter.Paths.traversal_filter(path))
+    filtered_path = os.path.join(root, pyfilter.Paths.contains(request_path, root) or flask.abort(404))
+    return get_dir(filtered_path) if path.endswith(os.path.altsep) else get_file(filtered_path)
 
-    try:
-        return flask.send_file(path)
-    except PermissionError:
-        flask.abort(403)
-
-@app.get('/', defaults = {'path': '.'})
-@app.get('/<path:path>/')
 def get_dir(path):
-    print('DIR', path)
     if not os.path.isdir(path):
         flask.abort(404)
 
-    index_path = os.path.join(os.path.abspath(path), 'index.html')
+    if render and (res := render_index(path)):
+        flask.abort(res)
 
-    if os.path.isfile(index_path):
-        flask.abort(get_file(index_path))
+    if block_by_default:
+        flask.abort(404)
 
     walk = next(os.walk(path, onerror=lambda _: flask.abort(403)))
 
-    relative = os.path.relpath(path)
+    relative = os.path.relpath(path, root)
     relative = '' if relative == '.' else '%s%c' % (relative.replace(os.path.sep, os.path.altsep), os.path.altsep)
 
     return flask.render_template(
@@ -42,9 +39,70 @@ def get_dir(path):
         dirs = walk[1],
         files = walk[2])
 
-def main(**kwargs):
-    host = kwargs.get('host', 'localhost')
-    port = kwargs.get('port', 80)
+def get_file(path):
+    if not os.path.isfile(path):
+        flask.abort(404)
+
+    try:
+        return flask.send_file(path)
+    except PermissionError:
+        flask.abort(403)
+
+def render_index(dir):
+    index_path = os.path.join(os.path.abspath(dir), 'index.html')
+
+    try:
+        return get_file(index_path)
+    except werkzeug.exceptions.HTTPException:
+        pass
+    return None
+
+def main():
+    global root
+    parser = argparse.ArgumentParser(
+        prog = pyfilter.__program__,
+        description = 'A simple web server for viewing files and directories.',
+        epilog = 'Made by %s.' % pyfilter.__author__)
+    
+    parser.add_argument(
+        '-v', '--version',
+        action = 'version',
+        version = '%(prog)s v' + pyfilter.__version__)
+    
+    parser.add_argument(
+        '-H', '--host',
+        metavar = 'HOST',
+        default = 'localhost',
+        help = 'the host to listen on (default: %(default)s)')
+
+    parser.add_argument(
+        'port',
+        metavar = 'PORT',
+        type = int,
+        default = 5000,
+        help = 'the port to listen on (default: %(default)s)')
+    
+    parser.add_argument(
+        '-P', '--path',
+        metavar = 'PATH',
+        nargs = '?',
+        default = '.',
+        help = 'the path to serve (default: %(default)s)')
+
+    args = parser.parse_args()
+
+    host = args.host
+    port = args.port
+    root = args.path
+
+    if isinstance(port, int):
+        if port < 0 or port > 65535:
+            parser.error('port must be between 0 and 65535')
+
+    if not os.path.isdir(root):
+        parser.error('path must be a directory')
+
+    print('Serving %s on http://%s:%s' % (root, host, port))
 
     app.run(
         host = host, 
