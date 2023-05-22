@@ -30,10 +30,13 @@ class TestContains(unittest.TestCase):
         self.assertTrue(filters.Paths.contains('/test/dir/dir2', root))
         self.assertTrue(filters.Paths.contains('/test/dir/dir2/', root))
 
-        self.assertFalse(filters.Paths.contains('test/', root))
-        self.assertFalse(filters.Paths.contains('test', root))
-        self.assertFalse(filters.Paths.contains('test/dir2', root))
-        self.assertFalse(filters.Paths.contains('test/dir2/', root))
+        self.assertTrue(filters.Paths.contains('test/', root))
+        self.assertTrue(filters.Paths.contains('test', root))
+        self.assertTrue(filters.Paths.contains('test/dir2', root))
+        self.assertTrue(filters.Paths.contains('test/dir2/', root))
+
+        self.assertTrue(filters.Paths.contains('', root))
+
 
         root = 'C://test/dir'
 
@@ -46,12 +49,6 @@ class TestContains(unittest.TestCase):
         self.assertFalse(filters.Paths.contains('C://test', root))
         self.assertFalse(filters.Paths.contains('C://test/dir2', root))
         self.assertFalse(filters.Paths.contains('C://test/dir2/', root))
-
-        self.assertTrue(filters.Paths.contains('test/dir/', 'test/dir'))
-        self.assertTrue(filters.Paths.contains('test/dir', 'test/dir'))
-
-        self.assertFalse(filters.Paths.contains('test/dir/', 'test/dir/dir2'))
-        self.assertFalse(filters.Paths.contains('test/dir', 'test/dir/dir2'))
 
         self.assertTrue(filters.Paths.contains('/test/dir/', '/test/dir/'))
         self.assertTrue(filters.Paths.contains('/test/dir', '/test/dir'))
@@ -70,6 +67,26 @@ class TestContains(unittest.TestCase):
 
         self.assertFalse(filters.Paths.contains('D://test/dir/', 'C://test/dir/'))
         self.assertFalse(filters.Paths.contains('D://test/dir', 'C://test/dir/'))
+        
+        root = 'D://test/dir/'
+
+        self.assertTrue(filters.Paths.contains('dir', root))
+        self.assertTrue(filters.Paths.contains('dir/', root))
+        self.assertTrue(filters.Paths.contains('dir/dir2', root))
+        self.assertTrue(filters.Paths.contains('dir/dir2/', root))
+
+        self.assertFalse(filters.Paths.contains('../dir', root))
+
+        root = '.'
+
+        self.assertTrue(filters.Paths.contains('.', root))
+        self.assertTrue(filters.Paths.contains('./', root))
+
+        root = ''
+
+        self.assertTrue(filters.Paths.contains('', root))
+        self.assertTrue(filters.Paths.contains('.', root))
+        self.assertTrue(filters.Paths.contains('./', root))
 
     def test_traversal(self):
 
@@ -122,9 +139,13 @@ class TestContains(unittest.TestCase):
         self.assertTrue(filters.Paths.contains(os.path.join('/test/dir/', 'dir2'), root))
         self.assertTrue(filters.Paths.contains(os.path.join('/test/dir/', 'dir2/'), root))
 
-        self.assertFalse(filters.Paths.contains(os.path.join('test/dir/', ''), root))
-        self.assertFalse(filters.Paths.contains(os.path.join('test/dir/', 'dir2'), root))
-        self.assertFalse(filters.Paths.contains(os.path.join('test/dir/', 'dir2/'), root))
+        self.assertFalse(filters.Paths.contains(os.path.join('/test/'), root))
+        self.assertFalse(filters.Paths.contains(os.path.join('/test/dir2'), root))
+        self.assertFalse(filters.Paths.contains(os.path.join('/test/dir2/'), root))
+
+        self.assertTrue(filters.Paths.contains(os.path.join('test/dir/', ''), root))
+        self.assertTrue(filters.Paths.contains(os.path.join('test/dir/', 'dir2'), root))
+        self.assertTrue(filters.Paths.contains(os.path.join('test/dir/', 'dir2/'), root))
 
         root = os.path.join('D://test/dir/', '')
 
@@ -156,9 +177,11 @@ class TestContains(unittest.TestCase):
         self.assertTrue(filters.Paths.contains('//test/dir', root))
         self.assertTrue(filters.Paths.contains('//test/dir/dir2', root))
         self.assertTrue(filters.Paths.contains('//test/dir/dir2/', root))
+        self.assertTrue(filters.Paths.contains('', root))
         
+        self.assertTrue(filters.Paths.contains('//test', root))
+
         self.assertFalse(filters.Paths.contains('//test/', root))
-        self.assertFalse(filters.Paths.contains('//test', root))
         self.assertFalse(filters.Paths.contains('//test/dir2', root))
         self.assertFalse(filters.Paths.contains('//test/dir2/', root))
 
@@ -167,18 +190,16 @@ class TestContains(unittest.TestCase):
         self.assertTrue(filters.Paths.contains('//test/dir/', root))
         self.assertTrue(filters.Paths.contains('//test/dir', root))
 
-        self.assertFalse(filters.Paths.contains('//test/', root))
-        self.assertFalse(filters.Paths.contains('//test', root))
-
         root = '//test/D:/dir/'
 
+
+        self.assertTrue(filters.Paths.contains('//test/D:', root))
         self.assertTrue(filters.Paths.contains('//test/D:/dir/', root))
         self.assertTrue(filters.Paths.contains('//test/D:/dir', root))
         self.assertTrue(filters.Paths.contains('//test/D:/dir/dir2', root))
         self.assertTrue(filters.Paths.contains('//test/D:/dir/dir2/', root))
 
         self.assertFalse(filters.Paths.contains('//test/D:/', root))
-        self.assertFalse(filters.Paths.contains('//test/D:', root))
         self.assertFalse(filters.Paths.contains('//test/D:/dir2', root))
         self.assertFalse(filters.Paths.contains('//test/D:/dir2/', root))
 
