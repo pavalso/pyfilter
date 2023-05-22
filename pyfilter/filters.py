@@ -1,8 +1,11 @@
 import os
+import re
 
 
 class Paths:
-    
+
+    _traversal_rgx = r'\.{1,2}((\/|\\)|$)'
+
     @staticmethod
     def contains(path: os.PathLike | str, root: os.PathLike | str = ''):
         pathd, bpath = os.path.splitdrive(os.path.abspath(path))
@@ -12,9 +15,7 @@ class Paths:
         return pathd.casefold() == rootd.casefold() and os.path.isabs(broot) == os.path.isabs(real) and os.path.commonpath([broot, real]).startswith(broot)
 
     @staticmethod
-    def relative(path: os.PathLike | str, root: os.PathLike | str = ''):
-        broot = os.path.abspath(root)
-        if not Paths.contains(path, broot):
-            return broot
-        brelative = os.path.relpath(path or os.path.sep, broot)
-        return os.path.abspath(os.path.join(broot, brelative))
+    def traversal_filter(path: os.PathLike | str):
+        while re.search(Paths._traversal_rgx, path):
+            path = re.sub(Paths._traversal_rgx, '', path)
+        return path
