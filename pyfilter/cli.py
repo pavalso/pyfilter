@@ -3,6 +3,7 @@ import flask
 import os
 import argparse
 import werkzeug.exceptions
+import jinja2.exceptions
 
 
 app = flask.Flask(__name__)
@@ -33,11 +34,14 @@ def get_dir(path):
     relative = os.path.relpath(path, root)
     relative = '' if relative == '.' else '%s%c' % (relative.replace(os.path.sep, os.path.altsep), os.path.altsep)
 
-    return flask.render_template(
-        'index.html',
-        path = relative,
-        dirs = walk[1],
-        files = walk[2])
+    try:
+        return flask.render_template(
+            'index.html',
+            path = relative,
+            dirs = walk[1],
+            files = walk[2])
+    except jinja2.exceptions.TemplateNotFound:
+        flask.abort(404)
 
 def get_file(path):
     if not os.path.isfile(path):
