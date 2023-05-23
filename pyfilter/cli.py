@@ -9,7 +9,7 @@ app = flask.Flask(__name__)
 root = os.getcwd()
 
 render = True
-block_by_default = True
+block_by_default = False
 
 @app.get('/', defaults={'path': '%c%c' % (os.path.curdir, os.path.altsep)})
 @app.route('/<path:path>', strict_slashes=False)
@@ -79,6 +79,7 @@ def main():
         'port',
         metavar = 'PORT',
         type = int,
+        nargs='?',
         default = 5000,
         help = 'the port to listen on (default: %(default)s)')
     
