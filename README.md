@@ -40,7 +40,7 @@ Las contribuciones son bienvenidas. Si desea contribuir a PyFilter, siga estos p
 
 ## Licencia
 
-Este proyecto está bajo la licencia MIT. Consulte el archivo [LICENSE](LICENSE) para obtener más información.
+Este proyecto está bajo la licencia GNU General Public License v3.0. Consulte el archivo [LICENSE](LICENSE) para obtener más información.
 
 ---
 
