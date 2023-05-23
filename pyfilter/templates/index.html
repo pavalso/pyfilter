@@ -11,10 +11,10 @@
     <hr style="width:100%">
     <ul>
         {% for name in dirs %}
-            <li><a href="/{{ path }}{{ name }}/"><div>{{ name }}/</div></a></li>
+            <li><a href="/{{ path }}{{ name }}/">{{ name }}/</a></li>
         {% endfor %}
         {% for name in files %}
-            <li><a href="/{{ path }}{{ name }}"><div>{{ name }}</div></a></li>
+            <li><a href="/{{ path }}{{ name }}">{{ name }}</a></li>
         {% endfor %}
     </ul>
     <hr style="width:100%">
