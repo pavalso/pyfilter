@@ -74,8 +74,10 @@ class TestContains(unittest.TestCase):
         self.assertTrue(filters.Paths.contains('dir/', root))
         self.assertTrue(filters.Paths.contains('dir/dir2', root))
         self.assertTrue(filters.Paths.contains('dir/dir2/', root))
+        self.assertTrue(filters.Paths.contains('../dir', root))
 
-        self.assertFalse(filters.Paths.contains('../dir', root))
+        self.assertFalse(filters.Paths.contains('../../dir', root))
+        self.assertFalse(filters.Paths.contains('../dir2', root))
 
         root = '.'
 
