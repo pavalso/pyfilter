@@ -9,15 +9,8 @@ import jinja2.exceptions
 app = flask.Flask(__name__)
 root = os.getcwd()
 
-render = True
+render = False
 block_by_default = False
-
-@app.get('/', defaults={'path': '%c%c' % (os.path.curdir, os.path.altsep)})
-@app.route('/<path:path>', strict_slashes=False)
-def on_request(path: str):
-    _, request_path = os.path.splitdrive(pyfilter.Paths.traversal_filter(path))
-    filtered_path = os.path.join(root, pyfilter.Paths.contains(request_path, root) or flask.abort(404))
-    return get_dir(filtered_path) if path.endswith(os.path.altsep) else get_file(filtered_path)
 
 def get_dir(path):
     if not os.path.isdir(path):
@@ -61,6 +54,14 @@ def render_index(dir):
         pass
     return None
 
+@app.get('/', defaults={'path': '%c%c' % (pyfilter.Paths.curdir, pyfilter.Paths.altsep)})
+@app.route('/<path:path>', strict_slashes=False)
+def on_request(path: str):
+    print('on_request(%s)' % path)
+    _, request_path = os.path.splitdrive(pyfilter.Paths.traversal_filter(path))
+    filtered_path = os.path.join(root, pyfilter.Paths.contains(request_path, root) or flask.abort(404))
+    return get_dir(filtered_path) if path.endswith(pyfilter.Paths.altsep) else get_file(filtered_path)
+
 def main():
     global root
     parser = argparse.ArgumentParser(
@@ -90,7 +91,6 @@ def main():
     parser.add_argument(
         '-P', '--path',
         metavar = 'PATH',
-        nargs = '?',
         default = '.',
         help = 'the path to serve (default: %(default)s)')
 
@@ -106,8 +106,6 @@ def main():
 
     if not os.path.isdir(root):
         parser.error('path must be a directory')
-
-    print('Serving %s on http://%s:%s' % (root, host, port))
 
     app.run(
         host = host, 
