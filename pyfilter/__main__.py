@@ -1,3 +1,3 @@
-from pyfilter import cli
+from pyfilter.test import main
 
-cli.main()
+main()

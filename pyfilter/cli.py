@@ -9,7 +9,7 @@ import jinja2.exceptions
 app = flask.Flask(__name__)
 root = os.getcwd()
 
-render = False
+render = True
 block_by_default = False
 
 def get_dir(path):

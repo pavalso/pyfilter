@@ -6,9 +6,5 @@ except ImportError:
 __all__ = ['Paths']
 
 __program__ = 'pyfilter'
-__version__ = '1.0'
+__version__ = '2.0'
 __author__ = 'Pavalso'
-
-if __name__ == '__main__':
-    import cli
-    cli.main()
