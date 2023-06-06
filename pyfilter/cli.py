@@ -1,69 +1,124 @@
-import pyfilter
-import flask
 import os
-import argparse
-import werkzeug.exceptions
-import jinja2.exceptions
+import pyfilter
+
+from werkzeug.wrappers import Request, Response
+from werkzeug.routing import Map, Rule
+from werkzeug.exceptions import abort, HTTPException
+from werkzeug.utils import send_from_directory, redirect
+from werkzeug.local import Local, LocalManager
+from jinja2 import Environment, FileSystemLoader, exceptions as jinja2_exceptions
 
 
-app = flask.Flask(__name__)
-root = os.getcwd()
+class PyfilterHttpServer(object):
 
-render = True
-block_by_default = False
+    @property
+    def request(self):
+        return self.local.request
 
-def get_dir(path):
-    if not os.path.isdir(path):
-        flask.abort(404)
+    def __init__(self, **kwargs):
+        template_path = os.path.join(os.path.dirname(__file__), 'templates')
 
-    if render and (res := render_index(path)):
-        flask.abort(res)
+        self.jinja_env = Environment(loader=FileSystemLoader(template_path), autoescape=True)
+        self.root = os.path.abspath(kwargs.get('path', os.getcwd()))
 
-    if block_by_default:
-        flask.abort(404)
+        self.local = Local()
+        self.local_manager = LocalManager([self.local])
 
-    walk = next(os.walk(path, onerror=lambda _: flask.abort(403)))
+        self.url_map = Map([
+            Rule('/', methods=['GET'], defaults={'path': '%c%c' % (pyfilter.Paths.curdir, pyfilter.Paths.altsep)}),
+            Rule('/<path:path>', methods=['GET'])
+        ])
 
-    relative = os.path.relpath(path, root)
-    relative = '' if relative == '.' else '%s%c' % (relative.replace(os.path.sep, os.path.altsep), os.path.altsep)
+    def dispatch_request(self, request):
+        adapter = self.url_map.bind_to_environ(request.environ)
+        try:
+            _, values = adapter.match()
+            return self.on_request(values['path'])
+        except HTTPException as e:
+            return e
+        except Exception as e:
+            self.abort(500)
 
-    try:
-        return flask.render_template(
-            'index.html',
-            path = relative,
-            dirs = walk[1],
-            files = walk[2])
-    except jinja2.exceptions.TemplateNotFound:
-        flask.abort(404)
+    def on_request(self, path: str):
+        _, request_path = os.path.splitdrive(pyfilter.Paths.traversal_filter(path))
+        filtered_path = os.path.join(self.root, pyfilter.Paths.contains(request_path, self.root) or self.abort(404))
+        return self.get_dir(filtered_path) if path.endswith(pyfilter.Paths.altsep) else self.get_file(filtered_path)
 
-def get_file(path):
-    if not os.path.isfile(path):
-        flask.abort(404)
+    def get_dir(self, path):
+        if not os.path.isdir(path):
+            self.abort(404)
 
-    try:
-        return flask.send_file(path)
-    except PermissionError:
-        flask.abort(403)
+        if (render := False) and (res := self.render_index(path)):
+            self.abort(res)
 
-def render_index(dir):
-    index_path = os.path.join(os.path.abspath(dir), 'index.html')
+        if block_by_default := False:
+            self.abort(404)
 
-    try:
-        return get_file(index_path)
-    except werkzeug.exceptions.HTTPException:
-        pass
-    return None
+        walk = next(os.walk(path, onerror=lambda _: self.abort(403)))
 
-@app.get('/', defaults={'path': '%c%c' % (pyfilter.Paths.curdir, pyfilter.Paths.altsep)})
-@app.route('/<path:path>', strict_slashes=False)
-def on_request(path: str):
-    print('on_request(%s)' % path)
-    _, request_path = os.path.splitdrive(pyfilter.Paths.traversal_filter(path))
-    filtered_path = os.path.join(root, pyfilter.Paths.contains(request_path, root) or flask.abort(404))
-    return get_dir(filtered_path) if path.endswith(pyfilter.Paths.altsep) else get_file(filtered_path)
+        relative = os.path.relpath(path, self.root)
+        relative = '' if relative == '.' else '%s%c' % (relative.replace(pyfilter.Paths.sep, pyfilter.Paths.altsep), pyfilter.Paths.altsep)
+
+        try:
+            return self.render_template(
+                'index.html',
+                path = relative,
+                dirs = walk[1],
+                files = walk[2])
+        except jinja2_exceptions.TemplateNotFound:
+            self.abort(404)
+
+    def get_file(self, path):
+        if not os.path.isfile(path):
+            return os.path.isdir(path) and \
+                self.redirect(self.request.path + pyfilter.Paths.altsep) or \
+                self.abort(404)
+
+        try:
+            return self.send_from_directory(self.root, path)
+        except PermissionError:
+            self.abort(403)
+
+    def render_index(self, dir):
+        index_path = os.path.join(os.path.abspath(dir), 'index.html')
+
+        try:
+            return self.get_file(index_path)
+        except HTTPException:
+            pass
+        return None
+
+    def render_template(self, template_name, **context):
+        t = self.jinja_env.get_template(template_name, parent=__file__)
+        return Response(t.render(context), mimetype='text/html')
+
+    def abort(self, code):
+        abort(code)
+
+    def redirect(self, location):
+        return redirect(location)
+
+    def send_from_directory(self, directory, path):
+        aux_path = os.path.relpath(path, self.root).replace(pyfilter.Paths.sep, pyfilter.Paths.altsep)
+        return send_from_directory(directory, aux_path, self.request.environ)
+
+    def wsgi_app(self, environ, start_response):
+        self.local.request = request = Request(environ)
+        response = self.dispatch_request(request)
+        return response(environ, start_response)
+
+    def __call__(self, environ, start_response):
+        return self.wsgi_app(environ, start_response)
+
+def create_app(**config):
+    config = config or {}
+    app = PyfilterHttpServer(**config)
+    return app.local_manager.make_middleware(app)
 
 def main():
-    global root
+    from werkzeug.serving import run_simple
+    import argparse
+
     parser = argparse.ArgumentParser(
         prog = pyfilter.__program__,
         description = 'A simple web server for viewing files and directories.',
@@ -98,15 +153,7 @@ def main():
 
     host = args.host
     port = args.port
-    root = args.path
 
-    if isinstance(port, int):
-        if port < 0 or port > 65535:
-            parser.error('port must be between 0 and 65535')
+    app = create_app(**vars(args))
 
-    if not os.path.isdir(root):
-        parser.error('path must be a directory')
-
-    app.run(
-        host = host, 
-        port = port)
+    run_simple(host, port, app, threaded=True)
