@@ -48,11 +48,11 @@ class PyfilterHttpServer(object):
         if not os.path.isdir(path):
             self.abort(404)
 
-        if (render := True) and (res := self.render_index(path)):
+        if (render := False) and (res := self.render_index(path)):
             self.abort(res)
 
-        #if block_by_default := True:
-        #    self.abort(404)
+        if block_by_default := False:
+            self.abort(404)
 
         walk = next(os.walk(path, onerror=lambda _: self.abort(403)))
 
