@@ -4,7 +4,7 @@ import re
 
 class Paths:
 
-    sep = r'\\'
+    sep = '\\'
     altsep = r'/'
     curdir = r'.'
 
