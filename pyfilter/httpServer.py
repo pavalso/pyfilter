@@ -2,7 +2,7 @@ import os
 
 from werkzeug.exceptions import HTTPException
 
-from pyfilter.server import BaseServer
+from pyfilter.baseServer import BaseServer
 from pyfilter.utils import BaseConfig
 
 
