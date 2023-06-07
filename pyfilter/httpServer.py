@@ -1,7 +1,5 @@
 import os
 
-from werkzeug.exceptions import HTTPException
-
 from pyfilter.baseServer import BaseServer
 from pyfilter.utils import BaseConfig
 
@@ -22,7 +20,7 @@ class HttpServer(BaseServer):
 
     def get_dir(self, dir):
         if self.config.render_index and (ret := self.render_index(dir)):
-            self.abort(ret)
+            return ret
 
         if not self.config.list_directories:
             self.abort(404)
@@ -40,6 +38,5 @@ class HttpServer(BaseServer):
 
         try:
             return self.get_file(index_path)
-        except HTTPException:
-            pass
-        return None
+        except:
+            return None
