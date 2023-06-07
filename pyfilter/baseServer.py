@@ -94,7 +94,10 @@ class BaseServer(object):
 
     def wsgi_app(self, environ, start_response):
         self.local.request = request = Request(environ)
-        response = self.dispatch_request(request)
+        try:
+            response = self.dispatch_request(request)
+        except HTTPException as e:
+            response = e
         if not issubclass(response.__class__, HTTPException) and not issubclass(response.__class__, Response):
             response = Response(response, mimetype='text/plain')
         return response(environ, start_response)
