@@ -1,9 +1,13 @@
 try:
-    from filters import Paths
+    import filters
+    import server
+    import httpServer
 except ImportError:
-    from .filters import Paths
+    from . import filters
+    from . import server
+    from . import httpServer
 
-__all__ = ['Paths']
+__all__ = ['filters', 'server', 'httpServer']
 
 __program__ = 'pyfilter'
 __version__ = '2.0'
